@@ -3,7 +3,7 @@ library(reshape)
 library(GLP)
 library(magrittr)
 library(ggplot2)
-
+library(DistributionPty)
 # Load Simulated Data
 load("data/Hill_Horror_dist.Rdata")
 
@@ -15,14 +15,15 @@ a <- seq(Tsample[3],Tsample[length(Tsample)-3],length = 100)
 ### for the parameters eta, beta, nu over different 
 ### values of a
 ###
-CI <- getCIMomentAndDerivatives(Tsample, 
-                                a,
-                                m = 0:4,
-                                d = 1:3,
-                                bootSample = TRUE,
-                                mc.cores = 4)  # Increase the number of cores to use parallel computing
+# CI <- getCIMomentAndDerivatives(Tsample, 
+#                                 a,
+#                                 m = 0:4,
+#                                 d = 1:3,
+#                                 bootSample = TRUE,
+#                                 mc.cores = 4)  # Increase the number of cores to use parallel computing
 
-save(CI,file = "data/horrrorCI.RData")
+load("data/horrorCI.RData")
+save(CI,file = "data/horrorCI.RData")
 
 ###
 ### Transform the CI's in a data frame format
@@ -35,15 +36,15 @@ for (i in 1:length(CI))
   bootSample <- CI[[i]]$bootSample
   
   newDataPlot <- data.frame(a =  CI[[i]]$a,
-                            parameter = rep(c("2nd order density derivative", "1st order density derivative", "Density function", "Tail distribution function"),3), 
-                            value =  as.numeric(c(CI[[i]]$hyperrectangle[1,1:4], CI[[i]]$hyperrectangle[2,1:4], as.numeric(apply(bootSample[,1:4],2,mean)))), 
-                            group = rep(c("lB", "uB", "Fhat"),each  = 4),
-                            type = c(rep("Boostrap 95% CI", 8),rep("Boostraped estimated function", 4) ))
+                            parameter = rep(c("First order density derivative", "Second order density derivative", "Density function"),3), 
+                            value =  as.numeric(c(CI[[i]]$hyperrectangle[1,1:3], CI[[i]]$hyperrectangle[2,1:3], as.numeric(apply(bootSample[,1:3],2,mean)))), 
+                            group = rep(c("lB", "uB", "Fhat"),each  = 3),
+                            type = c(rep("Boostrap 95% CI", 6),rep("Boostraped estimated function", 3) ))
   dataPlot <- rbind(dataPlot, newDataPlot)
 }
 
 
-bitmap("pics/EstimationLogHorror.tiff",res = 300, width = 5,height = 5)
+bitmap("pics/EstimationLogHorror.png",res = 300, width = 5,height = 5)
 ggplot(dataPlot, aes(x = a, y  = value, group = group)) + 
   geom_line(aes(linetype = type)) + 
   geom_vline(xintercept = qlhorror(0.8), colour = "grey")+

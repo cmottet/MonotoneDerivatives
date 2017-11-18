@@ -4,9 +4,11 @@ remove(list = ls())
 library(latex2exp)
 library(ggplot2)
 library(magrittr)
-load("data/Hill_Horror_dist.Rdata")
+
+load("data/log_Hill_data_optimparam.Rdata")
 load("data/MinMaxTransformedHorrorDist_TailProb.Rdata")
-optim = subset(optim, !m3 & ParamCover)
+
+optim = subset(optim, ParamCover & eps < 1e-4) #&ParamCover
 
 tmp <- which(apply(optim[,13:17],1,function(x)sum(!is.na(x))>0 ))
 length(which(apply(optim[,13:17],1,function(x)sum(!is.na(x))>0 )))
@@ -31,7 +33,7 @@ Data <- transform(Data,
 
 maxErrRel <- expand.grid(D = 0:5, P = P) %>% transform(maxErrRel = P/(1-P))
 
-ggplot(data = subset(Data,direction ==1), aes(x = D, y = RelErr,text = param.inc,size = J1empty)) +
+plot <- ggplot(data = subset(Data,direction ==1), aes(x = D, y = RelErr,text = param.inc,size = J1empty)) +
   geom_jitter(width = 0.3,color = alpha("black",1/5)) + 
   geom_hline(data = maxErrRel, aes(yintercept = maxErrRel))+
   facet_wrap(~P,ncol = 4,nrow = 4,
@@ -47,9 +49,8 @@ ggplot(data = subset(Data,direction ==1), aes(x = D, y = RelErr,text = param.inc
   labs(x = TeX('$D$'), y = TeX("Relative error"), size = "") +
   scale_size_discrete(labels = c("At least one moment constraint","No moment constraint"))
 
-ggsave("pics/Bounds_Transformed_Horror_Data.png",
-       width =10,
-       height = 5) # Save plot in png
+ggsave(plot, file = "pics/Bounds_Transformed_Horror_Data.png", width =10, height = 5) # Save plot in png
+ggsave(plot, file = "pics/Bounds_Transformed_Horror_Data.pdf", width = 10,height = 5,dpi=300)
 
 ###
 ### Get best subsets J2* and J1*

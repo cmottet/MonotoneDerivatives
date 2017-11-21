@@ -1,3 +1,7 @@
+# !!!!!! Run this script from the command line by typing !!!!!
+# ./shell/RjobRun.sh
+# from the home directory of this repositary
+
 rm(list=ls())
 library(dplyr)
 

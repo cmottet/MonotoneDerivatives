@@ -1,0 +1,30 @@
+# README
+
+This repositary is a companion to the paper [*"On Optimization over Tail Distributions"*](https://arxiv.org/abs/1711.00573) by Lam H., and Mottet C.. Here are made available ALL the tables, the datasets, and the figures given in the section  discussing numerical findings (Section 7). These results were generated using the [R](https://www.r-project.org/) statistical software (version 3.3.1). For transparency and reproducibility purposes, the R-codes used in the computations are also made available.
+
+We point out that these codes rely on functions available in the R packages *GLP* and *DistributionPty*  (see installation detail below), that we also developped. The motivation for building separate packages is to have readable, and coherently organized codes. More specifically,
+
+  * *GLP* is a package that focus on solving program (24) using the generalized linear programming (GLP) procedure described in Algorithm 1. 
+  * *DistributionPty*, as its name suggests, is a package containing functions related to the properties of some probability distributions functions. As an example, the function *rlhorror*  samples observation from the distribution described in the numeric section of the paper.
+ 
+## Installing  GLP and DistributionPty on your local machine
+
+To install RobustTail and DistributionPty on your local machine, you just need to run the following lines in R
+
+```
+install.packages("devtools")
+library(devtools)
+devtools::install_github("cmottet/GLP")
+devtools::install_github("cmottet/DistributionPty")
+```
+
+
+
+
+
+
+
+
+
+
+ 

@@ -4,14 +4,12 @@ library(dplyr)
 myArgs <- commandArgs()
 i <- as.numeric(myArgs[length(myArgs)]) ; print(i) 
 
-#setwd("~/Projects/R/MonotoneDerivatives/")
-#i<-8
 ###
 ### 0. Load files, set seed and define output file
 ###
 
-load("data/log_Hill_data_optimparam.Rdata") # Load optim_param
-load("data/log_Hill_Horror_dist.Rdata")
+load("data/log_Hill_data_optimparam.Rdata") # Obtain by running getOptimParam.R
+load("data/log_Hill_Horror_dist.Rdata") # Obtain by running getDataFigure1.R
 
 a <- as.numeric(quantile(sample,0.8)) # Threshold a for GLP
 m <- 0:3

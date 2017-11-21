@@ -1,3 +1,5 @@
+setwd("~/Projects/R/MonotoneDerivatives/")
+
 remove(list = ls())
 
 
@@ -8,7 +10,7 @@ library(magrittr)
 load("data/log_Hill_data_optimparam.Rdata")
 load("data/MaxLogdHorrorDist_TailProb.Rdata")
 
-optim = subset(optim, ParamCover & (uB-lB)/lB < 1e-4) #&ParamCover
+optim <- subset(optim, ParamCover & eps < 1e-5) #&ParamCover
 
 tmp <- which(apply(optim[,13:17],1,function(x)sum(!is.na(x))>0 ))
 length(which(apply(optim[,13:17],1,function(x)sum(!is.na(x))>0 )))
@@ -31,22 +33,24 @@ Data <- transform(Data,
                   param.inc = apply(Data[,1:N], 1,function(mat){paste(subset(ParamNames,unlist(mat)),collapse = ",")})
 )
 
+convexData <- subset(Data, (D==2) & (!d3) & (d2) & d1 & m0 & (!m1) & (!m2) & (!m3) )
 maxErrRel <- expand.grid(D = 0:5, P = P) %>% transform(maxErrRel = P/(1-P))
 
-plot <- ggplot(data = subset(Data,direction ==1), aes(x = D, y = RelErr,text = param.inc,size = J1empty)) +
-  geom_jitter(width = 0.3,color = alpha("black",1/5)) + 
+plot <- ggplot(data = Data, aes(x = D, y = RelErr,text = param.inc,size = J1empty)) +
+  geom_jitter(width = 0.3,color = alpha("black",1/5)) +
   geom_hline(data = maxErrRel, aes(yintercept = maxErrRel))+
+  geom_point(data = convexData, aes(x = D, y = RelErr, color="Convex Approach") ) +   
   facet_wrap(~P,ncol = 4,nrow = 4,
              labeller = as_labeller(c("0.9" = "p = 90",
                                       "0.99" = " p = 99",
-                                      "0.999" = " p = 99.9", 
-                                      "0.9999" = " p = 99.99")))   + 
-  coord_trans(y = "log10", limy = c(0.2,1.5e4)) + 
-  scale_y_continuous(breaks =   c(0.25,1,2.5,10,25,1e2,250,1e3,2500,1e4), 
-                     labels = c(0.25,1,2.5,10,25,1e2,250,1e3,2500,1e4)) + 
+                                      "0.999" = " p = 99.9",
+                                      "0.9999" = " p = 99.99")))   +
+  coord_trans(y = "log10", limy = c(0.01,1.5e4)) +
+  scale_y_continuous(breaks =   c(0.25,1,2.5,10,25,1e2,250,1e3,2500,1e4),
+                     labels = c(0.25,1,2.5,10,25,1e2,250,1e3,2500,1e4)) +
   scale_x_discrete(breaks =   seq(0,5,by = 2)) +
-  # labs(x = TeX('$D$'), y = TeX("Relative error"), size = TeX('Subset $\\mathit{J_1}$')) + 
-  labs(x = TeX('$D$'), y = TeX("Relative error"), size = "") +
+  # labs(x = TeX('$D$'), y = TeX("Relative error"), size = TeX('Subset $\\mathit{J_1}$')) +
+  labs(x = TeX('$D$'), y = TeX("Relative error"), size = "", color="") +
   scale_size_discrete(labels = c("At least one moment constraint","No moment constraint"))
 
 plot
@@ -60,13 +64,13 @@ library(plyr)
 Table <- ddply(Data, .(P,D), .fun = function(x){
   index_min <- which.min(x$RelErr)
   row_min <- x[index_min, ]
-  
+
   J2_star <- J2[unlist(row_min[1:length(J2)])] %>% toString()
   J1_star <- J1[unlist(row_min[length(J2) + 1:length(J1)])] %>% toString()
-  
+
   if (length(J2_star) ==0) J2_star = ' '
   if (length(J1_star) ==0) J2_star = ' '
-  
+
   Z_star <- format(min(row_min$uB,row_min$lB), scientific=TRUE, digits =3)
   data.frame(J1 = paste0("{",J1_star,"}"), J2 = paste0("{",J2_star,"}"), Z_star, row_min$RelErr)
 })
@@ -81,22 +85,22 @@ for (p in P*100){
   file <- paste0("tables/Transformed_Hill_Horror_TailProb_best_",p,".tex")
   table <- subset(Table, p == P)%>% select(-P)
   align  <- c(rep("|c",ncol(table)+1),"|")
-  
+
   xtable(table, align = align, digits = 3) %>% print(include.rownames=FALSE, type = "latex",file = file)
-  
+
   # We need to replace the tables by subtables (our way around uses unix commands)
   command_1 <- paste0("sed -i '' -- 's/begin{table}\\[ht\\]/begin{subtable}{\\\\textwidth}/g' ",file)
-  system(command_1) 
-  
+  system(command_1)
+
   command_2 <- paste0("sed -i '' -- 's/end{table}/end{subtable}/g' ",file)
-  system(command_2) 
-  
+  system(command_2)
+
   # We need to add the subcaption to the subtables (our way around uses unix commands)
   command_3 <- paste0("sed -i '' -- 's/D \\& J1 \\& J2/\\$D\\$ \\& \\$\\\\mathcal J\\_1\\^\\*\\$ \\& \\$\\\\mathcal J\\_2\\^\\*\\$/g' ",file)
-  system(command_3) 
-  
+  system(command_3)
+
   # Make the right column names
   command_4 <- paste0("sed -i '' -- 's/end{tabular}/end{tabular}\\\\subcaption{$p = ",p," $}/g' ",file)
-  system(command_4) 
-  
+  system(command_4)
+
 }

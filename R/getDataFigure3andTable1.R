@@ -1,11 +1,11 @@
 rm(list=ls())
 library(dplyr)
-source("R/extras.R")
-
 
 myArgs <- commandArgs()
-i <- as.numeric(myArgs[length(myArgs)]) ; print(i) #n=1
+i <- as.numeric(myArgs[length(myArgs)]) ; print(i) 
 
+#setwd("~/Projects/R/MonotoneDerivatives/")
+#i<-8
 ###
 ### 0. Load files, set seed and define output file
 ###
@@ -25,7 +25,7 @@ nmax_est_param <- length(m) + length(d)
 #
 if (i == 1)
 {
-  names = c(names(designTab), "D", "P", "direction",
+  names = c(names(designTab), "D", "P",
             "ParamCover","boundCover","elapsed.time","CPU.time",
             "uB","lB","status","eps","C","lastx")
   
@@ -52,7 +52,6 @@ J <- max(J2)
 J <- if (J == -Inf)  0 else J
 
 C <- DistributionPty::qlhorror(1-1e-16) # Upper bound of the compact support of the distributions to investigate from
-direction <- 1 # Maximize optimization program
 
 # Get bounds on constraints inequalities
 point_estimates <- optim_param[i,!is.na(optim_param[i,])] %>% select(-cover) 
@@ -84,32 +83,25 @@ gamma <- constRHS[2]
 k <- nrow(optim)
 for(D in J:5)
 {
-  # Is the objective function an indicator?
-  objFuncIndic <- D == 0
-  
   # Create the set of function constraints and objective function (change with D)
-  new_constFun <- rep(buildMomentDerConstFunc(D,J1,J2), each = 2)
+  new_constFun <- rep(GLP::buildMomentDerivativeConstFunc(D,J1,J2), each = 2)
   
   # Compute the initial feasible solution
-  initBFS <- GLP:: GLPPhase1(new_constFun,
-                             constRHS,
-                             constDir,
-                             paramConsFun = a,
-                             xf =  C,
-                             IterMax = 200)
+  initBFS <- GLP:: phase1(new_constFun,
+                          constRHS,
+                          constDir,
+                          constLambda,
+                          C =  C,
+                          IterMax = 200)
   
   for (p in P)
   {
-    # Parameters of the objective function
-    paramObjFun <- list(a = a, c = DistributionPty::qlhorror(p))
-    
     # Objective function
     objFun[[k]]  <- function(x, paramObjFun) 
     {
-      a <- paramObjFun$a
-      c <- paramObjFun$c
+      c <- DistributionPty::qlhorror(p)
       
-      output <-  if (max(c-a,0) < x) direction*x^(J-D)/factorial(D)*(x - max(c-a,0))^D else 0
+      output <-  if (max(c-a,0) < x) x^(J-D)/factorial(D)*(x - max(c-a,0))^D else 0
       return(output)
     } 
     
@@ -117,20 +109,17 @@ for(D in J:5)
     
     # Compute optimal upper bound and measure the time needed to do so
     start <- proc.time()
-    out <- GLP::GLPPhase2(initBFS = initBFS,
-                          objFun = objFun[[k]] ,
-                          constFun = constFun[[k]] ,
-                          constRHS,
-                          constDir,
-                          constLambda,
-                          objLambda,
-                          paramConsFun = a,
-                          paramObjFun,
-                          gamma = gamma,
-                          xf = C,
-                          IterMax = 200,
-                          objFuncIndic = objFuncIndic,
-                          factor = direction)
+    out <- GLP::phase2(initBFS = initBFS,
+                       objFun = objFun[[k]] ,
+                       constFun = constFun[[k]] ,
+                       constRHS,
+                       constDir,
+                       constLambda,
+                       objLambda,
+                       gamma = NULL,
+                       C = C,
+                       IterMax = 200,
+                       err = 1e-7)
     end <- proc.time()
     
     # Record results
@@ -139,7 +128,6 @@ for(D in J:5)
     optim[k,1:nmax_est_param] <- designTab[i, ]
     optim$D[k] <- D
     optim$P[k] <- p
-    optim$direction[k] <- direction
     optim$ParamCover[k] <- optim_param$cover[i]
     optim$elapsed.time[k] <- (end - start)["elapsed"]
     optim$CPU.time[k]     <- (end - start)["user.self"]
@@ -149,13 +137,13 @@ for(D in J:5)
     optim$eps[k]        <- out$eps
     optim$lastx[k]      <- out$lastx
     optim$C[k]  <- C
-    optim$boundCover[k] <- if (optim$direction[k] == 1)  out$lB >= 1-optim$P[k] 
+    optim$boundCover[k] <- out$lB >= 1-optim$P[k] 
     
-    optim_outDist[[k]] <- list(x = out$x, p = out$p,  s = out$r, lpdual = out$lpdual)
+    optim_outDist[[k]] <- list(x = out$x, p = out$p,  s = out$s, lpdual = out$lpdual)
     
     # Display and save the results 
-    sum_print <- matrix(c(direction,D,d[ind_d],m[ind_m],signif(out$lB,5),signif(out$uB,5),1-p),nrow = 1)
-    colnames(sum_print) <- c("Dir","D",names(ind_d[ind_d]),names(ind_m[ind_m]),"lB","uB", "P" )
+    sum_print <- matrix(c(D,d[ind_d],m[ind_m],signif(out$lB,5),signif(out$uB,5),1-p),nrow = 1)
+    colnames(sum_print) <- c("D",names(ind_d[ind_d]),names(ind_m[ind_m]),"lB","uB", "P" )
     print(sum_print)
     print(" ")
     
@@ -167,3 +155,4 @@ for(D in J:5)
     k <- k+1
   }
 }
+

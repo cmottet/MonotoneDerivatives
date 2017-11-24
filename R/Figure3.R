@@ -27,7 +27,7 @@ Data <- transform(Data,
                   nparam = as.factor(rowSums(Data[,1:N])),
                   J1empty = rowSums(Data[,(NJ2+1):N])==0,
                   J2empty = rowSums(Data[,1:NJ1])==0,
-                  RelErr = with(Data,apply(direction*(cbind(uB) - (1-P))/(1-P),1 ,min)),
+                  RelErr = with(Data,apply((cbind(lB) - (1-P))/(1-P),1 ,min)),
                   D  = as.factor(D),
                   Est = rowSums(Data[,1:NJ2]) >= 1,
                   param.inc = apply(Data[,1:N], 1,function(mat){paste(subset(ParamNames,unlist(mat)),collapse = ",")})
@@ -39,7 +39,7 @@ maxErrRel <- expand.grid(D = 0:5, P = P) %>% transform(maxErrRel = P/(1-P))
 plot <- ggplot(data = Data, aes(x = D, y = RelErr,text = param.inc,size = J1empty)) +
   geom_jitter(width = 0.3,color = alpha("black",1/5)) +
   geom_hline(data = maxErrRel, aes(yintercept = maxErrRel))+
-  geom_point(data = convexData, aes(x = D, y = RelErr, color="Convex Approach") ) +   
+  geom_point(data = convexData, aes(x = D, y = RelErr, color="Convex Approach") ) +
   facet_wrap(~P,ncol = 4,nrow = 4,
              labeller = as_labeller(c("0.9" = "p = 90",
                                       "0.99" = " p = 99",
@@ -49,7 +49,7 @@ plot <- ggplot(data = Data, aes(x = D, y = RelErr,text = param.inc,size = J1empt
   scale_y_continuous(breaks =   c(0.25,1,2.5,10,25,1e2,250,1e3,2500,1e4),
                      labels = c(0.25,1,2.5,10,25,1e2,250,1e3,2500,1e4)) +
   scale_x_discrete(breaks =   seq(0,5,by = 2)) +
-  # labs(x = TeX('$D$'), y = TeX("Relative error"), size = TeX('Subset $\\mathit{J_1}$')) +
+  labs(x = TeX('$D$'), y = TeX("Relative error"), size = TeX('Subset $\\mathit{J_1}$')) +
   labs(x = TeX('$D$'), y = TeX("Relative error"), size = "", color="") +
   scale_size_discrete(labels = c("At least one moment constraint","No moment constraint"))
 

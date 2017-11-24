@@ -10,27 +10,22 @@ library(magrittr)
 load("data/log_Hill_data_optimparam.Rdata")
 load("data/MaxLogdHorrorDist_TailProb.Rdata")
 
-optim <- subset(optim, ParamCover & eps < 1e-5) #&ParamCover
-
-tmp <- which(apply(optim[,13:17],1,function(x)sum(!is.na(x))>0 ))
-length(which(apply(optim[,13:17],1,function(x)sum(!is.na(x))>0 )))
-Data <- optim[tmp,]
-
+optim <- optim[-which(apply(optim, 1, function(x)all(is.na(x)))),]
 J1 <- 0:3
 J2 <- 3:1
 NJ1 <- length(J1)+1 # To account for 0
 NJ2 <- length(J2)-1
 N <- NJ1 + NJ2
-ParamNames <- names(Data)[1:N]
+ParamNames <- names(optim)[1:N]
 
-Data <- transform(Data,
-                  nparam = as.factor(rowSums(Data[,1:N])),
-                  J1empty = rowSums(Data[,(NJ2+1):N])==0,
-                  J2empty = rowSums(Data[,1:NJ1])==0,
-                  RelErr = with(Data,apply((cbind(lB) - (1-P))/(1-P),1 ,min)),
+Data <- transform(optim,
+                  nparam = as.factor(rowSums(optim[,1:N])),
+                  J1empty = rowSums(optim[,(NJ2+1):N])==0,
+                  J2empty = rowSums(optim[,1:NJ1])==0,
+                  RelErr = with(optim,apply((cbind(lB) - (1-P))/(1-P),1 ,min)),
                   D  = as.factor(D),
-                  Est = rowSums(Data[,1:NJ2]) >= 1,
-                  param.inc = apply(Data[,1:N], 1,function(mat){paste(subset(ParamNames,unlist(mat)),collapse = ",")})
+                  Est = rowSums(optim[,1:NJ2]) >= 1,
+                  param.inc = apply(optim[,1:N], 1,function(mat){paste(subset(ParamNames,unlist(mat)),collapse = ",")})
 )
 
 convexData <- subset(Data, (D==2) & (!d3) & (d2) & d1 & m0 & (!m1) & (!m2) & (!m3) )
@@ -58,7 +53,7 @@ plot
 ggsave(plot, file = "pics/Figure3.pdf", width = 10,height = 5,dpi=300)
 
 ###
-### Get best subsets J2* and J1*
+### Get best subsets J1* and J2*
 ###
 library(plyr)
 Table <- ddply(Data, .(P,D), .fun = function(x){

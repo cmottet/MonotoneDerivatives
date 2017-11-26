@@ -5,35 +5,38 @@ library(magrittr)
 load("data/log_Hill_data_optimparam.Rdata")
 load("data/MaxLogdHorrorDist_TailProb.Rdata")
 
+# Remove a row with only NA's
 optim <- optim[-which(apply(optim, 1, function(x)all(is.na(x)))),]
+
 J1 <- 0:3
 J2 <- 3:1
-NJ1 <- length(J1)+1 # To account for 0
-NJ2 <- length(J2)-1
-N <- NJ1 + NJ2
+N <- length(J1) + length(J2)
 ParamNames <- names(optim)[1:N]
 
 Data <- transform(optim,
                   nparam = as.factor(rowSums(optim[,1:N])),
-                  J1empty = rowSums(optim[,(NJ2+1):N])==0,
-                  J2empty = rowSums(optim[,1:NJ1])==0,
-                  RelErr = with(optim,apply((cbind(lB) - (1-P))/(1-P),1 ,min)),
+                  J1empty = rowSums(optim[, c("m0", "m1", "m2", "m3")])==0,
+                  J2empty = rowSums(optim[, c("d3", "d2", "d1")])==0,
+                  RelErr = with(optim,(bound - (1-P))/(1-P)),
                   D  = as.factor(D),
-                  Est = rowSums(optim[,1:NJ2]) >= 1,
                   param.inc = apply(optim[,1:N], 1,function(mat){paste(subset(ParamNames,unlist(mat)),collapse = ",")})
 )
+
+# Comparing to previous paper approach
+# Lam H, Mottet C (2017) Tail analysis without parametric models: A worst-case perspective. Operations
+# Research https://doi.org/10.1287/opre.2017.1643.
+convexData <- subset(Data, (D==2) & (!d3) & (d2) & d1 & m0 & (!m1) & (!m2) & (!m3) )
 
 ###
 ### Plot Figure 3
 ###
 
-convexData <- subset(Data, (D==2) & (!d3) & (d2) & d1 & m0 & (!m1) & (!m2) & (!m3) )
 maxErrRel <- expand.grid(D = 0:5, P = P) %>% transform(maxErrRel = P/(1-P))
 
 plot <- ggplot(data = Data, aes(x = D, y = RelErr,text = param.inc,size = J1empty)) +
   geom_jitter(width = 0.3,color = alpha("black",1/5)) +
   geom_hline(data = maxErrRel, aes(yintercept = maxErrRel))+
-#  geom_point(data = convexData, aes(x = D, y = RelErr, color="Convex Approach") ) +
+# geom_point(data = convexData, aes(x = D, y = RelErr, color="Convex Approach") ) +
   facet_wrap(~P,ncol = 4,nrow = 4,
              labeller = as_labeller(c("0.9" = "p = 90",
                                       "0.99" = " p = 99",
@@ -65,7 +68,7 @@ Table <- ddply(Data, .(P,D), .fun = function(x){
   if (length(J2_star) ==0) J2_star = ' '
   if (length(J1_star) ==0) J2_star = ' '
 
-  Z_star <- format(min(row_min$uB,row_min$lB), scientific=TRUE, digits =3)
+  Z_star <- format(row_min$bound, scientific=TRUE, digits =3)
   data.frame(J1 = paste0("{",J1_star,"}"), J2 = paste0("{",J2_star,"}"), Z_star, row_min$RelErr)
 })
 Table$P <- Table$P*100
@@ -98,3 +101,4 @@ for (p in P*100){
   system(command_4)
 
 }
+

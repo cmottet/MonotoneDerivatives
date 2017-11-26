@@ -22,9 +22,9 @@ m1 = DistributionPty::UpperTrunclHorrorMoment(a,1, n=1e5)
 m2 = DistributionPty::UpperTrunclHorrorMoment(a,2, n=1e5)
 m3 = DistributionPty::UpperTrunclHorrorMoment(a,3, n=1e5)
 
-truth  = data.frame(d3,-d2,d1,m0,m1,m2,m3)
+truth  = data.frame(d3,d2,d1,m0,m1,m2,m3)
 
-# Table containing all the possible scenarios when estimating the parameters. 
+# Table containing all the possible scenarios when estimating the parameters.
 # For example, the first row of designTab indicates that in the first scenario
 # all the derivatives, the tail distribution and the first are estimated.
 # In the second scenario, all parameters are estimated except the third derivative.
@@ -52,20 +52,20 @@ alpha <- 0.05
 
 # Compute the confidence intervals
 for (i in 1:nrow(designTab)){
-  
+
   index <- which(designTab[i,] %>% as.matrix)
-  
+
   if (length(index) != 0)
   {
     # Bonferroni correction factor
     bonf <- length(index)
-    
-    param <- apply(bootSample, 2, quantile, probs = c(alpha/(2*bonf),1-alpha/(2*bonf))) 
+
+    param <- apply(bootSample, 2, quantile, probs = c(alpha/(2*bonf),1-alpha/(2*bonf)))
     optim_param[i, c(2*index-1, 2*index)] <- as.numeric(c(param[1, index], param[2, index]))
-    
+
     # Does the 1-alpha CI covers the true value?
     optim_param[i, "cover"] = all((param[1,] <= truth & truth <=  param[2,])[,index])
-    
+
     # If the tail distribution is not estimation, set its bounds to 0 and 1
     if (!(4 %in% index))  optim_param[i, c("m0L","m0U")] <- c(0,1)
   }else{

@@ -13,7 +13,7 @@ for (i in 1:length(CI))
   bootSample <- CI[[i]]$bootSample
   
   newDataPlot <- data.frame(a =  CI[[i]]$a,
-                            parameter = rep(c("First order density derivative", "Second order density derivative", "Density function"),3), 
+                            parameter = rep(c("Second order density derivative", "First order density derivative", "Density function"),3), 
                             value =  as.numeric(c(CI[[i]]$hyperrectangle[1,1:3], CI[[i]]$hyperrectangle[2,1:3], as.numeric(apply(bootSample[,1:3],2,mean)))), 
                             group = rep(c("lB", "uB", "Fhat"),each  = 3),
                             type = c(rep("Bootstrap 95% CI", 6),rep("Bootstrapped estimated function", 3) ))

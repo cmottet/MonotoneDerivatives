@@ -36,7 +36,7 @@ maxErrRel <- expand.grid(D = 0:5, P = P) %>% transform(maxErrRel = P/(1-P))
 plot <- ggplot(data = Data, aes(x = D, y = RelErr,text = param.inc,size = J1empty)) +
   geom_jitter(width = 0.3,color = alpha("black",1/5)) +
   geom_hline(data = maxErrRel, aes(yintercept = maxErrRel))+
-# geom_point(data = convexData, aes(x = D, y = RelErr, color="Convex Approach") ) +
+  #geom_point(data = convexData, aes(x = D, y = RelErr, color="Convex Approach") ) +
   facet_wrap(~P,ncol = 4,nrow = 4,
              labeller = as_labeller(c("0.9" = "p = 90",
                                       "0.99" = " p = 99",
